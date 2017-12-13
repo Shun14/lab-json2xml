@@ -1,5 +1,5 @@
 const json2xml = require('json2xml');
-
+const progress = require('./progress');
 
 const fs = require('fs')
 const path = require('path');
@@ -42,12 +42,13 @@ class transfer {
         }
 
         let fileList = await fs.readdirSync(filePath);
-        // console.log(fileList)
         return fileList;
     }
 
     async singleToXml(filePath) {
         let desPath = process.argv[3]
+        let isexist = await fs.existsSync(desPath);
+        if(!isexist) await fs.mkdirSync(desPath);
         let name = filePath.split('\\').pop().split('.')[0];
         desPath = path.join(desPath, name) + '.xml'
 
@@ -55,12 +56,14 @@ class transfer {
         let data = await fs.readFileSync(filePath, 'utf8');
         let json = JSON.parse(data);
         await this.checkKey(json)
-        await this.data.annotation.push(this.folder)
+        await this.data.annotation.push(this.folder.folder = desPath)
         await this.data.annotation.push(this.filename)
         await this.data.annotation.push(this.size)
         await fs.writeFileSync(desPath, json2xml(this.data, { header: true }));
         await this.data.annotation.splice(0,this.data.annotation.length)
-        
+        await this.size.size.splice(0, this.size.size.length)
+        this.filename.filename = '';
+        this.folder.folder = '';
 
         return desPath;
     }
@@ -88,17 +91,19 @@ class transfer {
                 } else if (key === 'text' && json[key] !== undefined && json[key] !== '') {
                     //TODO
                     //distinct rotated and text out
-                    if (keys.indexOf('rotated_box') > 0 && json[key] !== undefined) {
+                    if (keys.indexOf('rotated_box') > -1 && json[key] !== undefined) {
                         let rotated_box = json['rotated_box'];
                         if (rotated_box.length === 4) {
                             this.data.annotation.push(this.newObject(json[key], 'text' ,rotated_box[0][0], rotated_box[0][1], rotated_box[1][0], rotated_box[1][1], rotated_box[2][0], rotated_box[2][1], rotated_box[3][0], rotated_box[3][1] ))
                         } else {
                             console.error('rotated_box err:', rotated_box)
                         }
-                    } else if (keys.indexOf('box') > 0 && json[key] !== undefined) {
-
+                    } else if (keys.indexOf('box') > -1 && json[key] !== undefined) {
+                        //TODO 配合上面代码生成8位数据
+                        let box = json['box'];
+                        this.data.annotation.push(this.newObject(json[key], 'text', box.xmin, box.ymax, box.xmin, box.ymin, box.xmax, box.ymin, box.xmax, box.ymax ));   
                     }
-                    arr.push(json[key])
+                    
                     delete json[key]
                 } else if (json[key] !== [] && json[key] !== null && json[key] !== '') {
                     this.checkKey(json[key])
@@ -127,22 +132,27 @@ class transfer {
 
     async transfer() {
         let list = await this.getAllFileName();
-
+        let pb = new progress('转换进度', list.length);
         let filePath = process.argv[2]
-
+        let num = 1;
         for (let single of list) {
             // console.log('single:',single)
-            let des = await this.singleToXml(filePath + single)
+            let des = await this.singleToXml(filePath + single);
+            pb.render({
+                completed: num,
+                total : list.length
+            })
+            num++;
         }
     }
 }
-let arr = []
-process.argv[2] = '.\\11\\';
-process.argv[3] = '.\\22\\';
+
+process.argv[2] = '.\\annotation\\' || process.argv[2];
+process.argv[3] = '.\\xml\\' || process.argv[3];
 let test = new transfer();
 (async () => {
     await test.transfer();
-    console.log(arr)
+    console.log('转换完成');
 })().catch(err => {
     console.error('err:', err)
 })
