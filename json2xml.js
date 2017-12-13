@@ -51,13 +51,13 @@ class transfer {
         if(!isexist) await fs.mkdirSync(desPath);
         let name = filePath.split('\\').pop().split('.')[0];
         desPath = path.join(desPath, name) + '.xml'
-
-        this.filename.filename = name + '.tif'
+        this.filename.filename = `${name}.tif`
+        this.folder.folder = desPath;
         let data = await fs.readFileSync(filePath, 'utf8');
         let json = JSON.parse(data);
         await this.checkKey(json)
-        await this.data.annotation.push(this.folder.folder = desPath)
-        await this.data.annotation.push(this.filename)
+        await this.data.annotation.push(this.folder)
+        await this.data.annotation.push(this.filename);
         await this.data.annotation.push(this.size)
         await fs.writeFileSync(desPath, json2xml(this.data, { header: true }));
         await this.data.annotation.splice(0,this.data.annotation.length)
@@ -94,14 +94,14 @@ class transfer {
                     if (keys.indexOf('rotated_box') > -1 && json[key] !== undefined) {
                         let rotated_box = json['rotated_box'];
                         if (rotated_box.length === 4) {
-                            this.data.annotation.push(this.newObject(json[key], 'text' ,rotated_box[0][0], rotated_box[0][1], rotated_box[1][0], rotated_box[1][1], rotated_box[2][0], rotated_box[2][1], rotated_box[3][0], rotated_box[3][1] ))
+                            this.data.annotation.push(this.newObject(json[key], 'text' , rotated_box[1][0], rotated_box[1][1], rotated_box[2][0], rotated_box[2][1], rotated_box[3][0], rotated_box[3][1] ,rotated_box[0][0], rotated_box[0][1]))
                         } else {
                             console.error('rotated_box err:', rotated_box)
                         }
                     } else if (keys.indexOf('box') > -1 && json[key] !== undefined) {
                         //TODO 配合上面代码生成8位数据
                         let box = json['box'];
-                        this.data.annotation.push(this.newObject(json[key], 'text', box.xmin, box.ymax, box.xmin, box.ymin, box.xmax, box.ymin, box.xmax, box.ymax ));   
+                        this.data.annotation.push(this.newObject(json[key], 'text', box.xmin, box.ymin, box.xmax, box.ymin, box.xmax, box.ymax, box.xmin, box.ymax ));   
                     }
                     
                     delete json[key]
@@ -128,7 +128,7 @@ class transfer {
             }
         }
         return obj;
-    }
+    }   
 
     async transfer() {
         let list = await this.getAllFileName();
