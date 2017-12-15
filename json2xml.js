@@ -47,6 +47,7 @@ class transfer {
 
     async singleToXml(filePath) {
         let desPath = process.argv[3]
+        console.log('desPath:',desPath)
         let isexist = await fs.existsSync(desPath);
         if(!isexist) await fs.mkdirSync(desPath);
         let name = filePath.split('\\').pop().split('.')[0];
@@ -94,14 +95,30 @@ class transfer {
                     if (keys.indexOf('rotated_box') > -1 && json[key] !== undefined) {
                         let rotated_box = json['rotated_box'];
                         if (rotated_box.length === 4) {
-                            this.data.annotation.push(this.newObject(json[key], 'text' , rotated_box[1][0], rotated_box[1][1], rotated_box[2][0], rotated_box[2][1], rotated_box[3][0], rotated_box[3][1] ,rotated_box[0][0], rotated_box[0][1]))
+                            let xList = [];
+                            xList.push(rotated_box[0][0])
+                            xList.push(rotated_box[1][0])
+                            xList.push(rotated_box[2][0])
+                            xList.push(rotated_box[3][0])
+
+                            let yList = []
+                            yList.push(rotated_box[0][1])
+                            yList.push(rotated_box[1][1])
+                            yList.push(rotated_box[2][1])
+                            yList.push(rotated_box[3][1]);
+
+                            let xmin = Math.min.apply(xList);
+                            let xmax = Math.max.apply(xList)
+                            let ymin = Math.min.apply(yList)
+                            let ymax = Math.max.apply(yList);
+                            this.data.annotation.push(this.newObject(json[key], 'text' , xmin, ymin, xmax, ymax, rotated_box[1][0], rotated_box[1][1], rotated_box[2][0], rotated_box[2][1], rotated_box[3][0], rotated_box[3][1] ,rotated_box[0][0], rotated_box[0][1]))
                         } else {
                             console.error('rotated_box err:', rotated_box)
                         }
                     } else if (keys.indexOf('box') > -1 && json[key] !== undefined) {
                         //TODO 配合上面代码生成8位数据
                         let box = json['box'];
-                        this.data.annotation.push(this.newObject(json[key], 'text', box.xmin, box.ymin, box.xmax, box.ymin, box.xmax, box.ymax, box.xmin, box.ymax ));   
+                        this.data.annotation.push(this.newObject(json[key], 'text', box.xmin, box.ymin, box.xmax, box.ymax, box.xmin, box.ymin, box.xmax, box.ymin, box.xmax, box.ymax, box.xmin, box.ymax ));   
                     }
                     
                     delete json[key]
@@ -119,12 +136,13 @@ class transfer {
 
     }
 
-    newObject(content, name, x1, y1, x2, y2, x3, y3, x4, y4) {
+    newObject(content, name, xmin, ymin, xmax, ymax, x1, y1, x2, y2, x3, y3, x4, y4) {
         let obj = {
             'object': {
                 'content': content,
+                'difficult': 0,
                 'name': name,
-                "bndbox": [{ x1: x1 }, { y1: y1 }, { x2: x2 }, { y2: y2 }, { x3: x3 }, { y3: y3 }, { x4: x4 }, { y4: y4 }]
+                "bndbox": [{xmin: xmin}, {ymin: ymin}, {xmax: xmax}, {ymax: ymax},{ x1: x1 }, { y1: y1 }, { x2: x2 }, { y2: y2 }, { x3: x3 }, { y3: y3 }, { x4: x4 }, { y4: y4 }]
             }
         }
         return obj;
@@ -147,7 +165,7 @@ class transfer {
     }
 }
 
-process.argv[2] = '.\\annotation\\' || process.argv[2];
+process.argv[2] = '.\\annotation\\'  || process.argv[2];
 process.argv[3] = '.\\xml\\' || process.argv[3];
 let test = new transfer();
 (async () => {
