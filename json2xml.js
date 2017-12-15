@@ -47,12 +47,12 @@ class transfer {
 
     async singleToXml(filePath) {
         let desPath = process.argv[3]
-        console.log('desPath:',desPath)
+        
         let isexist = await fs.existsSync(desPath);
         if(!isexist) await fs.mkdirSync(desPath);
-        let name = filePath.split('\\').pop().split('.')[0];
-        desPath = path.join(desPath, name) + '.xml'
-        this.filename.filename = `${name}.tif`
+        let name = filePath.split('/').pop().split('.')[0];
+        desPath = path.join(desPath, `${name}.xml`)
+        this.filename.filename = `${name}.jpg`
         this.folder.folder = desPath;
         let data = await fs.readFileSync(filePath, 'utf8');
         let json = JSON.parse(data);
@@ -154,7 +154,6 @@ class transfer {
         let filePath = process.argv[2]
         let num = 1;
         for (let single of list) {
-            // console.log('single:',single)
             let des = await this.singleToXml(filePath + single);
             pb.render({
                 completed: num,
@@ -165,8 +164,8 @@ class transfer {
     }
 }
 
-process.argv[2] = '.\\annotation\\'  || process.argv[2];
-process.argv[3] = '.\\xml\\' || process.argv[3];
+process.argv[2] = process.argv[2] || './11/';
+process.argv[3] = process.argv[3] || './test/' ; 
 let test = new transfer();
 (async () => {
     await test.transfer();
