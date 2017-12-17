@@ -118,7 +118,17 @@ class transfer {
                     } else if (keys.indexOf('box') > -1 && json[key] !== undefined) {
                         //TODO 配合上面代码生成8位数据
                         let box = json['box'];
-                        this.data.annotation.push(this.newObject(json[key], 'text', box.xmin, box.ymin, box.xmax, box.ymax, box.xmin, box.ymin, box.xmax, box.ymin, box.xmax, box.ymax, box.xmin, box.ymax ));   
+                        if (json['direction'] === 'left_to_right') {
+                            this.data.annotation.push(this.newObject(json[key], 'text', box.xmin, box.ymin, box.xmax, box.ymax, box.xmin, box.ymin, box.xmax, box.ymin, box.xmax, box.ymax, box.xmin, box.ymax ));                            
+                        } else if( json['direction'] === 'down_to_up' ) {
+                            this.data.annotation.push(this.newObject(json[key], 'text', box.xmin, box.ymin, box.xmax, box.ymax, box.xmin, box.ymax, box.xmin, box.ymin, box.xmax, box.ymin, box.xmax, box.ymax ));                            
+                        } else if( json['direction'] === 'up_to_down' ) {
+                            this.data.annotation.push(this.newObject(json[key], 'text', box.xmin, box.ymin, box.xmax, box.ymax, box.xmax, box.ymin, box.xmax, box.ymax, box.xmin, box.ymax, box.xmin, box.ymin ));
+                        } else {
+                            // console.error('err occuerd : nobox ,json:',json)
+                            this.data.annotation.push(this.newObject(json[key], 'text', box.xmin, box.ymin, box.xmax, box.ymax, box.xmin, box.ymin, box.xmax, box.ymin, box.xmax, box.ymax, box.xmin, box.ymax ));                                                        
+                            // throw json;
+                        }
                     }
                     
                     delete json[key]
