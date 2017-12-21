@@ -107,10 +107,10 @@ class transfer {
                             yList.push(rotated_box[2][1])
                             yList.push(rotated_box[3][1]);
 
-                            let xmin = Math.min.apply(xList);
-                            let xmax = Math.max.apply(xList)
-                            let ymin = Math.min.apply(yList)
-                            let ymax = Math.max.apply(yList);
+                            let xmin = Math.min.apply(null, xList);
+                            let xmax = Math.max.apply(null, xList)
+                            let ymin = Math.min.apply(null, yList)
+                            let ymax = Math.max.apply(null, yList);
                             this.data.annotation.push(this.newObject(json[key], 'text' , xmin, ymin, xmax, ymax, rotated_box[1][0], rotated_box[1][1], rotated_box[2][0], rotated_box[2][1], rotated_box[3][0], rotated_box[3][1] ,rotated_box[0][0], rotated_box[0][1]))
                         } else {
                             console.error('rotated_box err:', rotated_box)
