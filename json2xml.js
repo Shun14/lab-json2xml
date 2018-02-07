@@ -1,5 +1,7 @@
 const json2xml = require('json2xml');
 const progress = require('./progress');
+const fastXmlParser = require('fast-xml-parser');
+const xml2js = require('xml2js-parser').parseStringSync;
 
 const fs = require('fs')
 const path = require('path');
@@ -54,9 +56,9 @@ class transfer {
         desPath = path.join(desPath, `${name}.xml`)
         this.filename.filename = `${name}.jpg`
         this.folder.folder = desPath;
-        let data = await fs.readFileSync(filePath, 'utf8');
-        let json = JSON.parse(data);
-        await this.checkKey(json)
+        let data = await fs.readFileSync(filePath, 'utf8')
+        const json = fastXmlParser.parse(data);
+        await this.checkXmlKey(json)
         await this.data.annotation.push(this.folder)
         await this.data.annotation.push(this.filename);
         await this.data.annotation.push(this.size)
@@ -67,6 +69,44 @@ class transfer {
         this.folder.folder = '';
 
         return desPath;
+    }
+
+    async parseString(data) {
+
+    }
+
+    async checkXmlKey(json) {
+        if(!json.hasOwnProperty('annotation')) {
+            throw `json failed:${json}`
+        }
+        let annotation = json.annotation;
+        this.size.size.push({
+            'width':annotation.size.width
+        })
+        this.size.size.push({
+            'height':annotation.size.height
+        })
+        this.size.size.push({
+            'depth':annotation.size.depth
+        })
+        let objects = annotation.object;
+        let boolArr = objects instanceof Array;
+        let boolObj = objects instanceof Object;
+        if(boolArr) {
+            for (let object of objects) {
+                let bndbox = object.bndbox;
+                await this.data.annotation.push(this.newObject(object.text, object.name, bndbox.xmin,bndbox.ymin, bndbox.xmax, bndbox.ymax, bndbox.xmin, bndbox.ymin, bndbox.xmax, bndbox.ymin, bndbox.xmax, bndbox.ymax, bndbox.xmin, bndbox.ymax ))
+                await this.save2Txt(object.text, bndbox.xmin, bndbox.ymin, bndbox.xmax, bndbox.ymin, bndbox.xmax, bndbox.ymax, bndbox.xmin, bndbox.ymax)
+            }
+            return;
+        }
+
+        if(boolObj) {
+            let bndbox = objects.bndbox;
+            await this.data.annotation.push(this.newObject(objects.text, objects.name, bndbox.xmin,bndbox.ymin, bndbox.xmax, bndbox.ymax, bndbox.xmin, bndbox.ymin, bndbox.xmax, bndbox.ymin, bndbox.xmax, bndbox.ymax, bndbox.xmin, bndbox.ymax ))
+            await this.save2Txt(objects.text, bndbox.xmin, bndbox.ymin, bndbox.xmax, bndbox.ymin, bndbox.xmax, bndbox.ymax, bndbox.xmin, bndbox.ymax)
+        }
+
     }
 
     async checkKey(json) {
@@ -156,10 +196,14 @@ class transfer {
             }
         }
         return obj;
-    }   
+    }
+    async save2Txt(content,x1, y1, x2, y2, x3, y3, x4, y4){
+        await fs.appendFileSync(`./txt_part2/${this.filename.filename.split('.')[0]}.txt`,`${x1} ${y1} ${x2} ${y2} ${x3} ${y3} ${x4} ${y4} 0 ${content}\n`)
+    }
 
     async transfer() {
         let list = await this.getAllFileName();
+
         let pb = new progress('转换进度', list.length);
         let filePath = process.argv[2]
         let num = 1;
@@ -170,12 +214,13 @@ class transfer {
                 total : list.length
             })
             num++;
+            console.log('num:',num,'/',list.length);
         }
     }
 }
 
-process.argv[2] = process.argv[2] || './11/';
-process.argv[3] = process.argv[3] || './test/' ; 
+process.argv[2] = process.argv[2] || './reviewed_xmls_part2/';
+process.argv[3] = process.argv[3] || './xml_part2/' ; 
 let test = new transfer();
 (async () => {
     await test.transfer();
